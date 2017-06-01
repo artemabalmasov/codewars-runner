@@ -1,7 +1,12 @@
 HOSTNAME=codewars
-# NOTE: systems was removed do to failing Travis issues. Must debug those issues before systems can be put back in
-# Haskell was removed until the image is able to be repaired
-CONTAINERS=dotnet jvm node python ruby alt func erlang
+
+# Building erlang images have been suspended (frozen) until they are able to be repaired
+CONTAINERS=node dotnet jvm python ruby alt rust julia systems dart crystal ocaml swift haskell objc go lua
+
+# recent containers should be updated when adding or modifying a language, so that
+# the travis build process will test it. The process cant test all languages
+# without timing out so this is required to get passed that issue.
+RECENT_CONTAINERS=node
 
 ALL_CONTAINERS=${CONTAINERS} base
 
@@ -9,27 +14,15 @@ ALL_CONTAINERS=${CONTAINERS} base
 
 all: ${CONTAINERS}
 
+recent: ${RECENT_CONTAINERS}
+
 base:
 	cp docker/$@.docker ./Dockerfile
 	docker build -t $(HOSTNAME)/$@-runner .
 
-${CONTAINERS}: base
+${CONTAINERS}:
 	cp docker/$@.docker ./Dockerfile
 	docker build -t $(HOSTNAME)/$@-runner .
-
-# Push docker containers to registry
-push_to_registry:
-	docker push $(HOSTNAME)/base-runner
-	echo $(patsubst %, $(HOSTNAME)/%-runner, $(CONTAINERS)) | xargs -n 1 docker push
-
-# Remove docker processes that have exited cleanly
-docker_rm_exited:
-	[ ! -n "$(shell docker ps -a | grep Exit | cut -d ' ' -f 1)" ] || echo $(shell docker ps -a | grep Exit | cut -d ' ' -f 1) | xargs -n 1 docker rm -f
-
-# Cleanup temporary images that are no longer used
-docker_rmi_temporary:
-	docker rm $(docker ps -a)
-	docker rmi $(docker images -q -f dangling=true)
 
 # Kill all of the in-flight and exited docker containers
 docker_rm:
@@ -38,19 +31,44 @@ docker_rm:
 
 # Kill all docker images
 docker_rmi: docker_rm
-	[ ! -n "$(shell docker images -q)" ] || docker images -q | xargs -n 1 docker rmi -f
+	docker rmi $(docker images -q -f dangling=true)
 
-clean: docker_rm_exited docker_rmi_temporary
+clean: docker_rmi
 
 deep-clean: docker_rmi
 
+push:
+	docker push codewars/base-runner
+	docker push codewars/node-runner
+	docker push codewars/ruby-runner
+	docker push codewars/python-runner
+	docker push codewars/dotnet-runner
+	docker push codewars/jvm-runner
+	docker push codewars/haskell-runner
+	docker push codewars/systems-runner
+	docker push codewars/erlang-runner
+	docker push codewars/alt-runner
+	docker push codewars/rust-runner
+	docker push codewars/crystal-runner
+	docker push codewars/dart-runner
+	docker push codewars/ocaml-runner
+	docker push codewars/objc-runner
+	docker push codewars/swift-runner || true
+
 pull:
-	docker pull codewars/ruby-runner
+	docker pull codewars/base-runner
 	docker pull codewars/node-runner
+	docker pull codewars/ruby-runner
 	docker pull codewars/python-runner
 	docker pull codewars/dotnet-runner
 	docker pull codewars/jvm-runner
+	docker pull codewars/haskell-runner
 	docker pull codewars/systems-runner
-	docker pull codewars/func-runner
 	docker pull codewars/erlang-runner
 	docker pull codewars/alt-runner
+	docker pull codewars/rust-runner
+	docker pull codewars/crystal-runner
+	docker pull codewars/dart-runner
+	docker pull codewars/ocaml-runner
+	docker pull codewars/objc-runner
+	docker pull codewars/swift-runner || true

@@ -4,6 +4,7 @@ require 'forwardable'
 require 'delegate'
 require 'set'
 require 'uri'
+require_relative 'common'
 
 NameError
 class Test
@@ -27,10 +28,10 @@ class Test
         success_msg = "Test Passed"
         success_msg += ": #{options[:success_msg]}" if options[:success_msg]
 
-        puts "<PASSED::>#{success_msg}"
+        puts "\n<PASSED::>#{success_msg}"
       else
         message ||= 'Value is not what was expected'
-        puts "<FAILED::>#{message}"
+        puts "\n<FAILED::>#{message}"
         if $describing
           @@failed << Test::Error.new(message)
         else
@@ -50,7 +51,7 @@ class Test
       ms = measure do
         begin
           $describing = true
-          puts "<DESCRIBE::>#{message}"
+          puts "\n<DESCRIBE::>#{message}"
           yield
         ensure
           $describing = false
@@ -59,11 +60,11 @@ class Test
           raise @@failed.first if @@failed.any?
         end
       end
-      puts "<COMPLETEDIN::>#{ms}ms" if ms
+      puts "\n<COMPLETEDIN::>#{ms}ms" if ms
     end
 
     def it(message, &block)
-      puts "<IT::>#{message}"
+      puts "\n<IT::>#{message}"
       @@before_blocks.each do |block|
         block.call
       end
@@ -73,6 +74,7 @@ class Test
         @@after_blocks.each do |block|
           block.call
         end
+        puts "\n<COMPLETEDIN::>"
       end
     end
 
@@ -128,6 +130,32 @@ class Test
       end
     end
 
+    def assert_include(actual, expected, options = {})
+      if actual.include?(expected)
+        options[:success_msg] ||= 'Value included ' + expected.inspect
+        Test.expect(true, nil, options)
+      else
+        msg = msg ? msg + ' -  ' : ''
+        message = "#{msg}Expected: #{actual.inspect} to include #{expected.inspect}"
+        Test.expect(false, message)
+      end
+    end
+
+    def assert_not_include(actual, expected, options = {})
+      if !actual.include?(expected)
+        options[:success_msg] ||= 'Value did not include ' + expected.inspect
+        Test.expect(true, nil, options)
+      else
+        msg = msg ? msg + ' -  ' : ''
+        message = "#{msg}Expected: #{actual.inspect} to not include #{expected.inspect}"
+        Test.expect(false, message)
+      end
+    end
+
+    def fail(msg = nil)
+      Test.expect(false, msg)
+    end
+
     def random_letter
       ('a'..'z').to_a.sample
     end
@@ -140,11 +168,12 @@ class Test
       rand(100)
     end
 
+    def format_msg(*args)
+      Display.format_msg(*args)
+    end
+
     private
 
-    def format_msg(msg)
-      msg.gsub("\n", '<:LF:>')
-    end
 
     def wrap_error
       begin
@@ -158,9 +187,9 @@ class Test
 
     def handle_error(ex)
       if ex.is_a? Exception
-        puts "<ERROR::>#{format_msg(ex.inspect)}<:LF:>\n#{ex.backtrace.join('<:LF:>')}"
+        puts "\n<ERROR::>#{Display.format_msg(ex.inspect)}<:LF:>#{ex.backtrace.join('<:LF:>')}"
       else
-        puts "<ERROR::>#{format_msg(ex)}"
+        puts "\n<ERROR::>#{Display.format_msg(ex)}"
       end
     end
 
