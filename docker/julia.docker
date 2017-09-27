@@ -11,12 +11,12 @@ RUN apt-get update \
 ENV USER codewarrior
 ENV HOME /home/codewarrior
 ENV JULIA_PATH /usr/local/julia
-ENV JULIA_VERSION 0.4.6
+ENV JULIA_VERSION 0.6.0
 
 RUN mkdir $JULIA_PATH \
   && apt-get update && apt-get install -y curl \
-  && curl -sSL "https://julialang.s3.amazonaws.com/bin/linux/x64/${JULIA_VERSION%[.-]*}/julia-${JULIA_VERSION}-linux-x86_64.tar.gz" -o julia.tar.gz \
-  && curl -sSL "https://julialang.s3.amazonaws.com/bin/linux/x64/${JULIA_VERSION%[.-]*}/julia-${JULIA_VERSION}-linux-x86_64.tar.gz.asc" -o julia.tar.gz.asc \
+  && curl -sSL "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION%[.-]*}/julia-${JULIA_VERSION}-linux-x86_64.tar.gz" -o julia.tar.gz \
+  && curl -sSL "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION%[.-]*}/julia-${JULIA_VERSION}-linux-x86_64.tar.gz.asc" -o julia.tar.gz.asc \
   && export GNUPGHOME="$(mktemp -d)" \
 # http://julialang.org/juliareleases.asc
 # Julia (Binary signing key) <buildbot@julialang.org>
@@ -28,27 +28,28 @@ RUN mkdir $JULIA_PATH \
 
 ENV PATH $JULIA_PATH/bin:$PATH
 
-#CMD ["julia"]
-
-# add the package json first to a tmp directory and build, copy over so that we dont rebuild every time
-ADD package.json /tmp/package.json
-RUN cd /tmp && npm install --production
-RUN mkdir -p /runner && cp -a /tmp/node_modules /runner
-
-# ADD cli-runner and install node deps
-ADD . /runner
+RUN ln -s /home/codewarrior /workspace
+ENV NPM_CONFIG_LOGLEVEL warn
 
 WORKDIR /runner
+COPY package.json package.json
+RUN npm install --production
 
-# Run the test suite to make sure this thing works
+COPY *.js ./
+COPY lib/*.js lib/
+COPY lib/*.sh lib/
+COPY lib/utils lib/utils
+COPY lib/runners/julia.js lib/runners/
+COPY examples/julia.yml examples/
+COPY test/runner.js test/
+COPY test/runners/julia_spec.js test/runners/
+COPY frameworks/julia frameworks/julia
+
+COPY entrypoint.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 USER codewarrior
-# Set environment variables
-
-ENV USER codewarrior
-ENV HOME /home/codewarrior
+ENV USER=codewarrior HOME=/home/codewarrior
 RUN mocha -t 5000 test/runners/julia_spec.js
 
-#timeout is a fallback in case an error with node
-#prevents it from exiting properly
-ENTRYPOINT ["timeout", "15", "node"]
+ENTRYPOINT ["./entrypoint.sh"]

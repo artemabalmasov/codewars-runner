@@ -5,7 +5,7 @@ node_js:
   - "6"
 
 install:
-  - npm install -g eslint
+  - npm install -g eslint@3.19.0
 
 services:
   - docker
@@ -28,12 +28,27 @@ env:
     - TEST_IMG=dart
     - TEST_IMG=crystal
     - TEST_IMG=ocaml
-#    - TEST_IMG=swift
+    - TEST_IMG=swift
     - TEST_IMG=haskell
     - TEST_IMG=objc
     - TEST_IMG=go
     - TEST_IMG=lua
+    - TEST_IMG=java
+    - TEST_IMG=esolangs
+    - TEST_IMG=chapel
+    - TEST_IMG=nim
+    - TEST_IMG=r
+    - TEST_IMG=erlang
+    - TEST_IMG=elixir
+    - TEST_IMG=powershell
+    - TEST_IMG=gradle
+    - TEST_IMG=solidity
 
 script:
   - eslint '**/*.js'
-  - make $TEST_IMG
+  - cp docker/${TEST_IMG}.docker ./Dockerfile
+  - if docker pull codewars/${TEST_IMG}-runner; then
+      docker build --cache-from codewars/${TEST_IMG}-runner -t codewars/${TEST_IMG}-runner .;
+    else
+      docker build -t codewars/${TEST_IMG}-runner .;
+    fi

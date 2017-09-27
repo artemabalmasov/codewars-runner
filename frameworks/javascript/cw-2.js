@@ -256,18 +256,18 @@ try {
     // additional code is injected and line numbers will not match.
     trace: function(ex) {
       return (ex.stack || ex.toString() || '')
-                .toString()
-                // remove file names (ie: (/cli-runner/...))
-                .replace(/\s\(.*\)/g, '')
-                // remove at [eval] statements
-                .replace(/(at)*( Object.)*\s*[(]?\[eval\].*(:\d*)*[)]?\n/g, '')
-                // remove stack trace beyond the Module information
-                .replace(/at Module[\w\s.:\d\n]*/g, '')
-                // remove at Object.<anonymous>
-                .replace(/\t*at Object.<\w*>\n/g, '')
-                // handleError is used to wrap top level code, so lets remove it so that it doesn't
-                // confuse users who won't understand why it is there.
-                .replace('at Object.Test.handleError', '');
+        .toString()
+        // remove file names (ie: (/cli-runner/...))
+        .replace(/\s\(.*\)/g, '')
+        // remove at [eval] statements
+        .replace(/(at)*( Object.)*\s*[(]?\[eval\].*(:\d*)*[)]?\n/g, '')
+        // remove stack trace beyond the Module information
+        .replace(/at Module[\w\s.:\d\n]*/g, '')
+        // remove at Object.<anonymous>
+        .replace(/\t*at Object.<\w*>\n/g, '')
+        // handleError is used to wrap top level code, so lets remove it so that it doesn't
+        // confuse users who won't understand why it is there.
+        .replace('at Object.Test.handleError', '');
     },
     pass: function() {
       _expect(true);
@@ -360,8 +360,8 @@ try {
       // Compares two floating point values and checks whether they are approximately equal to each other
       options = options || {};
       msg = Test.display.message('Expected actual value ' + actual + ' to approximately equal expected value ' + expected + ' (accepted relative error: 1e-9)', msg);
-      if (expected === 0) {
-        Test.expect(Math.abs(actual) <= 1e-9, msg, options);
+      if (Math.abs(expected) <= 1) {
+        Test.expect(Math.abs(expected - actual) <= 1e-9, msg, options);
       }
       else {
         Test.expect(Math.abs((expected - actual) / expected) <= 1e-9, msg, options);
@@ -371,8 +371,8 @@ try {
       // Compares two floating point values and checks whether they are sufficiently different from each other
       options = options || {};
       msg = Test.display.message('Actual value ' + actual + ' should not approximately equal unexpected value ' + unexpected + ' (rejected relative error: 1e-9)', msg);
-      if (unexpected === 0) {
-        Test.expect(Math.abs(actual) > 1e-9, msg, options);
+      if (Math.abs(unexpected) <= 1) {
+        Test.expect(Math.abs(unexpected - actual) > 1e-9, msg, options);
       }
       else {
         Test.expect(Math.abs((unexpected - actual) / unexpected) > 1e-9, msg, options);
